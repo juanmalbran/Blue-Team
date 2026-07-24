@@ -130,6 +130,33 @@ Apache registra las peticiones GET/200 desde LAN; Suricata observa los flujos ha
 
 ---
 
+## Evidencia del laboratorio
+
+Capturas propias del montaje, tomadas durante la implementación.
+
+**Enrolamiento de un endpoint Linux (Kali) contra el servidor, vía terminal:**
+![Enrolamiento Kali](blueteam-enrolamiento.png)
+
+**Integración de Windows — endpoint enrolado y reportando al SIEM:**
+![Integración Windows](blueteam-windows.png)
+
+**Configuración de una integración de logs personalizada en Fleet:**
+![Logs personalizados en Fleet](blueteam-custom-logs.png)
+
+**Integración de Apache HTTP Server — recolección de access/error logs:**
+![Integración Apache](blueteam-apache.png)
+
+**Política de agente Linux combinando Suricata (IDS) y Apache:**
+![Política Suricata + Apache](blueteam-suricata-apache-policy.png)
+
+**Dashboard de logs en Kibana — eventos ingeridos desde las fuentes:**
+![Kibana logs](blueteam-kibana-logs.png)
+
+**Exploración de eventos en Kibana Discover — búsqueda y filtrado de la telemetría:**
+![Kibana Discover](blueteam-kibana-discover.png)
+
+---
+
 ## Errores comunes evitados
 
 - **DNSSEC activado en laboratorio** → rompe la resolución; se desactiva y se usa forwarding directo.
