@@ -1,56 +1,149 @@
-<h1 align="center">Blue Team · SOC & SIEM</h1>
+<h1 align="center">Blue Team · Infraestructura SIEM</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Elastic%20SIEM-005571?style=flat-square&logo=elasticsearch&logoColor=white" />
-  <img src="https://img.shields.io/badge/Suricata%20IDS-EF7B20?style=flat-square" />
-  <img src="https://img.shields.io/badge/pfSense-212121?style=flat-square" />
-  <img src="https://img.shields.io/badge/Threat%20Hunting-3FB950?style=flat-square" />
+  <img src="https://img.shields.io/badge/Elastic%20Stack-005571?style=flat-square&logo=elasticsearch&logoColor=white" />
+  <img src="https://img.shields.io/badge/pfSense-212121?style=flat-square&logo=pfsense&logoColor=white" />
+  <img src="https://img.shields.io/badge/Suricata-EF7B20?style=flat-square" />
+  <img src="https://img.shields.io/badge/Cowrie%20Honeypot-3FB950?style=flat-square" />
   <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-FF7B72?style=flat-square" />
 </p>
 
 ---
 
-## Sobre este módulo
+## Sobre este proyecto
 
-Defensa activa desde la perspectiva de un **SOC (Security Operations Center)**: monitorización, detección, correlación de eventos y respuesta ante incidentes. El foco está en **ver** lo que pasa en la red y los endpoints, y **actuar** antes de que un incidente se convierta en una brecha.
+Diseño y despliegue **desde cero** de una infraestructura de red segura y monitorizada, con **pfSense** como núcleo de comunicaciones y **Elastic Cloud** como SIEM central. Simula un entorno empresarial segmentado donde toda la telemetría (endpoints, honeypots, IDS y servicios web) se centraliza para análisis de logs en tiempo real — la base de cualquier operación SOC.
 
-**Temas cubiertos:** SOC/CSIRT/CERT · SIEM (ELK Stack, Splunk) · IOCs e IoAs · Cyber Kill Chain · Pirámide del Dolor · threat hunting · IDS/IPS (Suricata) · honeypots · hardening · Zero Trust · marcos NIST/ISO.
+La red se divide en tres zonas con distinto nivel de confianza:
 
----
-
-## Concepto clave — Pirámide del Dolor
-
-La estrategia de detección no es toda igual. La **Pirámide del Dolor** (David Bianco) ordena los indicadores según cuánto le cuesta al atacante cambiarlos: detectar un hash es trivial de evadir, pero detectar **comportamiento (TTPs)** obliga al adversario a reinventar su forma de operar.
-
-![Pirámide del Dolor](piramide-del-dolor.png)
-
-> La conclusión operativa: invertir en detectar comportamiento rinde mucho más que perseguir hashes e IPs.
+- **LAN** — equipos internos de confianza (Windows 11 monitorizado)
+- **DMZ** — honeypots (Cowrie SSH + rdpy RDP) para capturar y estudiar ataques
+- **DMZ2** — servicios expuestos (Apache) bajo inspección de **Suricata** (IDS)
 
 ---
 
-## Práctica — Laboratorio SIEM
+## Arquitectura de red
 
-Montaje de un entorno defensivo completo de extremo a extremo:
-
-- **Perímetro** con pfSense (firewall, segmentación de red).
-- **Detección de red** con Suricata (IDS/IPS) generando eventos EVE en JSON.
-- **SIEM** con Elastic Stack: ingesta de logs, Fleet Server para gestión de agentes, y dashboards de detección en Kibana.
-- **Endpoints** enrolados (Windows y Linux) reportando telemetría.
-- **Honeypot** integrado para atraer y estudiar actividad maliciosa.
-
-El objetivo: recolectar telemetría de múltiples fuentes en un punto central, correlacionarla y generar alertas accionables.
+```
+Host (WAN / internet)
+        │  puerto 222 → 2222 (SSH / Cowrie)
+        │  puerto 333 → 3389 (RDP / rdpy)
+        │
+   ┌─ pfSense UTM (CE 2.7.2) ──────────────────────────┐
+   │  WAN   → IP asignada por el host                   │
+   │  LAN   → 192.168.100.1/24                          │
+   │  DMZ   → 192.168.200.1/24                          │
+   │  DMZ2  → 192.168.250.1/24                          │
+   └────────────────────────────────────────────────────┘
+        │               │                 │
+        ▼               ▼                 ▼
+   LAN (.100.x)    DMZ (.200.x)      DMZ2 (.250.x)
+   Windows 11      Cowrie + rdpy     Apache + Suricata
+   endpoint        honeypots         servicio + IDS
+        │               │                 │
+        └───────────────┴─────────────────┘
+                        │
+                   Elastic Cloud
+                (GCP · Fleet · Kibana)
+```
 
 ---
 
-## Stack
+## Stack tecnológico
 
-`Elastic Stack (Elasticsearch · Kibana · Fleet)` · `Suricata` · `pfSense` · `Sysmon` · `Wireshark` · `Honeypot` · `KQL`
+| Componente | Rol | Versión |
+|---|---|---|
+| pfSense CE | Firewall / router / segmentación | 2.7.2 |
+| Elastic Cloud | SIEM central (Elasticsearch + Kibana + Fleet) | 9.x |
+| Elastic Agent / Defend | Telemetría de endpoint | 8.12.x |
+| Cowrie | Honeypot SSH/Telnet (Docker) | latest |
+| rdpy | Honeypot RDP (Docker) | latest |
+| Suricata | IDS/IPS sobre DMZ2 | 6.x |
+| Apache | Servicio web expuesto | — |
+| Kali / Windows 11 | Endpoints del laboratorio | — |
 
 ---
 
-## Proyecto relacionado
+## Implementación
 
-Este módulo es la base del proyecto capstone **[Nullsec](https://github.com/juanmalbran/nullsec-siem-elk)**, donde llevé el SIEM a producción con Threat Intelligence (MISP) y detección real de ransomware.
+### 1. Segmentación con pfSense
+Cuatro interfaces (WAN, LAN, DMZ, DMZ2) sobre VirtualBox, cada una en su red interna. DNS Resolver en modo forwarding hacia `1.1.1.1` para que todos los segmentos resuelvan `elastic.co` y envíen logs a la nube. DHCP por zona, con **mapeo estático** del honeypot a `192.168.200.99` (identidad persistente en los logs y NAT estable).
+
+### 2. Firewall con mínimo privilegio
+Cada red solo habla por los puertos estrictamente necesarios; todo lo demás se bloquea por defecto.
+
+- **LAN** → acceso total (administración y monitoreo).
+- **DMZ (honeypots)** → puede salir a internet (DNS 53, HTTP/HTTPS 80/443 para enviar logs) pero **bloqueada hacia LAN y DMZ2**.
+- **DMZ2 (Suricata/Apache)** → misma política: sale a internet para logs, **aislada** de las redes internas.
+- **NAT Port Forward** → WAN:222 → `200.99:2222` (Cowrie) y WAN:333 → `200.99:3389` (rdpy), exponiendo los honeypots al exterior sin comprometer la red interna.
+
+### 3. Honeypots en la DMZ
+Dos honeypots cubriendo los vectores más atacados:
+
+```bash
+# Cowrie — honeypot SSH/Telnet de media interacción
+docker run -p 222:2222 cowrie/cowrie > cowrie.log
+
+# rdpy — honeypot RDP con persistencia de logs
+docker run -d -p 333:3389 --log-driver=json-file \
+  --log-opt max-size=10m -v /var/log/logs-honey:/var/log/rdpy \
+  amazedostrich/rdpy
+```
+
+Ambos envían su actividad a Elastic mediante la integración **Custom Logs**, con dataset propio por honeypot para filtrar en Kibana.
+
+### 4. SIEM central — Elastic Cloud + Fleet
+Tres políticas de agente en `Security > Fleet`:
+
+| Política | Fuente | Integración |
+|---|---|---|
+| HONEYPOT | Kali DMZ (Cowrie) | Custom Logs |
+| WINDOWS | Windows 11 LAN | Elastic Defend |
+| SURICATA/APACHE | Kali DMZ2 | Suricata + Apache |
+
+Resultado: **4 agentes en estado Healthy** reportando desde los distintos segmentos.
+
+### 5. Análisis de logs en Kibana
+Validación end-to-end correlacionando telemetría de las cuatro fuentes. Ejemplo — intento de conexión desde LAN hacia el honeypot detectado por Elastic Defend:
+
+| Campo | Valor | Significado |
+|---|---|---|
+| `source.ip` | 192.168.100.101 | Windows en LAN |
+| `destination.ip` | 192.168.200.99 | Honeypot en DMZ |
+| `destination.port` | 2222 | Puerto SSH de Cowrie |
+| `event.action` | connect_attempted | Intento de conexión |
+| `event.category` | network | Evento de red |
+
+Apache registra las peticiones GET/200 desde LAN; Suricata observa los flujos hacia DMZ2 y alerta ante patrones sospechosos; Cowrie y Defend capturan los intentos de acceso a los honeypots.
+
+---
+
+## Objetivos cumplidos
+
+- [x] Infraestructura de red segmentada con múltiples DMZs
+- [x] Reglas de firewall con principio de mínimo privilegio
+- [x] Honeypots (SSH + RDP) operativos y accesibles desde WAN
+- [x] Honeypots aislados de las redes internas
+- [x] Fuente adicional en DMZ2 (Apache + Suricata)
+- [x] 4 agentes Elastic Healthy con logs centralizados
+- [x] Eventos indexados y correlacionados en Kibana por segmento
+
+---
+
+## Errores comunes evitados
+
+- **DNSSEC activado en laboratorio** → rompe la resolución; se desactiva y se usa forwarding directo.
+- **Honeypot sin IP fija** → los logs pierden identidad; se resuelve con DHCP static mapping.
+- **Exponer el honeypot en el puerto SSH real (22)** → conflicto con el propio pfSense; se usan 222/333 externos.
+- **Olvidar las reglas de salida HTTP/HTTPS en la DMZ** → el agente no puede enviar logs a Elastic Cloud.
+
+---
+
+## Módulos relacionados
+
+- **[Nullsec](https://github.com/juanmalbran/Nullsec-SIEM-ELK)** — proyecto integrador: SIEM con ELK 8.x, ti_misp, Fleet, 4 reglas KQL y detección real de ransomware (Bad Rabbit).
+- **[DFIR](https://github.com/juanmalbran/DFIR)** — la evidencia forense es el insumo del incident response en el SOC.
+- **[Red-Team](https://github.com/juanmalbran/Red-Team)** — las TTPs que este SIEM está diseñado para detectar.
 
 ---
 
