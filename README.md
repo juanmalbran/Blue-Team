@@ -12,13 +12,13 @@
 
 ## Sobre este proyecto
 
-Diseño y despliegue **desde cero** de una infraestructura de red segura y monitorizada, con **pfSense** como núcleo de comunicaciones y **Elastic Cloud** como SIEM central. Simula un entorno empresarial segmentado donde toda la telemetría (endpoints, honeypots, IDS y servicios web) se centraliza para análisis de logs en tiempo real — la base de cualquier operación SOC.
+Diseño y despliegue **desde cero** de una infraestructura de red segura y monitorizada, con **pfSense** (un firewall/router) como núcleo de comunicaciones y **Elastic Cloud** como **SIEM** central — el sistema que centraliza los logs de toda la red y los correlaciona para detectar ataques. Simula un entorno empresarial segmentado donde toda la telemetría (endpoints, honeypots, IDS y servicios web) se centraliza para análisis de logs en tiempo real — la base de cualquier operación SOC (*Security Operations Center*).
 
 La red se divide en tres zonas con distinto nivel de confianza:
 
 - **LAN** — equipos internos de confianza (Windows 11 monitorizado)
-- **DMZ** — honeypots (Cowrie SSH + rdpy RDP) para capturar y estudiar ataques
-- **DMZ2** — servicios expuestos (Apache) bajo inspección de **Suricata** (IDS)
+- **DMZ** — *zona desmilitarizada*: un segmento aislado donde se colocan **honeypots** (señuelos deliberadamente vulnerables —Cowrie SSH + rdpy RDP— para atraer y estudiar a los atacantes) sin arriesgar la red interna
+- **DMZ2** — servicios expuestos (Apache) bajo inspección de **Suricata**, un **IDS** (*Intrusion Detection System*: vigila el tráfico y alerta ante patrones de ataque)
 
 ---
 
@@ -28,7 +28,7 @@ La red se divide en tres zonas con distinto nivel de confianza:
 
 La decisión de centralizar **varias fuentes de telemetría** (endpoint, honeypots e IDS) en vez de conformarse con listas de hashes o IPs responde a esta lógica: cuanto más arriba de la pirámide detecta el defensor, más caro le resulta al atacante adaptarse.
 
-- **Honeypots (Cowrie + rdpy)** capturan el **comportamiento** del atacante — herramientas y TTPs, la cúspide de la pirámide.
+- **Honeypots (Cowrie + rdpy)** capturan el **comportamiento** del atacante — herramientas y TTPs (las tácticas y técnicas catalogadas en **MITRE ATT&CK**), la cúspide de la pirámide.
 - **Suricata (IDS)** detecta **patrones y artefactos** de red, no solo indicadores estáticos.
 - **Elastic Defend en el endpoint** aporta la telemetría de proceso necesaria para correlacionar acciones, no bytes.
 
