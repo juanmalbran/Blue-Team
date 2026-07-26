@@ -22,6 +22,20 @@ La red se divide en tres zonas con distinto nivel de confianza:
 
 ---
 
+## Por qué esta arquitectura — la Pirámide del Dolor
+
+![Pirámide del Dolor](piramide-del-dolor.png)
+
+La decisión de centralizar **varias fuentes de telemetría** (endpoint, honeypots e IDS) en vez de conformarse con listas de hashes o IPs responde a esta lógica: cuanto más arriba de la pirámide detecta el defensor, más caro le resulta al atacante adaptarse.
+
+- **Honeypots (Cowrie + rdpy)** capturan el **comportamiento** del atacante — herramientas y TTPs, la cúspide de la pirámide.
+- **Suricata (IDS)** detecta **patrones y artefactos** de red, no solo indicadores estáticos.
+- **Elastic Defend en el endpoint** aporta la telemetría de proceso necesaria para correlacionar acciones, no bytes.
+
+Bloquear un hash o una IP frena al atacante unos minutos; detectar su forma de operar lo obliga a rediseñar el ataque. Esta infraestructura está pensada para observar en los niveles altos.
+
+---
+
 ## Arquitectura de red
 
 ```
