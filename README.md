@@ -115,20 +115,19 @@ Tres políticas de agente en `Security > Fleet`:
 | WINDOWS | Windows 11 LAN | Elastic Defend |
 | SURICATA/APACHE | Kali DMZ2 | Suricata + Apache |
 
-Resultado: **4 agentes en estado Healthy** reportando desde los distintos segmentos.
+Resultado: **4 agentes en estado Healthy** — los tres de los segmentos (LAN, DMZ, DMZ2) más el agente interno de Elastic Cloud — reportando en tiempo real.
 
 ### 5. Análisis de logs en Kibana
-Validación end-to-end correlacionando telemetría de las cuatro fuentes. Ejemplo — intento de conexión desde LAN hacia el honeypot detectado por Elastic Defend:
+Validación end-to-end del pipeline: cada una de las cuatro fuentes se consulta en Kibana Discover con su filtro y su dataset propio, confirmando que la telemetría llega, se indexa y es correlacionable por segmento.
 
-| Campo | Valor | Significado |
-|---|---|---|
-| `source.ip` | 192.168.100.101 | Windows en LAN |
-| `destination.ip` | 192.168.200.99 | Honeypot en DMZ |
-| `destination.port` | 2222 | Puerto SSH de Cowrie |
-| `event.action` | connect_attempted | Intento de conexión |
-| `event.category` | network | Evento de red |
+| Fuente | Filtro KQL | Dataset | Qué confirma |
+|---|---|---|---|
+| **Endpoint (Windows)** | `event.category:"network"` | `endpoint.events.network` | Elastic Defend captura los intentos de conexión salientes del endpoint LAN en tiempo real |
+| **Apache (DMZ2)** | `event.module:"apache"` | `apache.access` | Cada petición HTTP GET/200 desde LAN queda registrada con método, código y bytes |
+| **Suricata (DMZ2)** | `event_type:"alert"` | `suricata.eve` | El IDS observa los flujos hacia DMZ2 y levanta alertas ante patrones sospechosos |
+| **Honeypot (Cowrie)** | `destination.port:2222` | `endpoint.events.network` | Los intentos de acceso SSH al honeypot se capturan aunque la conexión sea rechazada |
 
-Apache registra las peticiones GET/200 desde LAN; Suricata observa los flujos hacia DMZ2 y alerta ante patrones sospechosos; Cowrie y Defend capturan los intentos de acceso a los honeypots.
+**Caso correlacionado** — un intento de conexión desde el Windows de la LAN (`192.168.100.101`) hacia el honeypot Cowrie (`192.168.200.99:2222`) aparece simultáneamente en la telemetría de endpoint (`event.action: connect_attempted`) y, si hubiera cruzado DMZ2, en Suricata — demostrando que el mismo evento es visible y cruzable desde distintas fuentes, que es la base del threat hunting en un SOC.
 
 ---
 
