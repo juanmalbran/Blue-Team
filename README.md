@@ -149,9 +149,6 @@ Capturas propias del montaje, tomadas durante la implementación.
 **Política de agente Linux combinando Suricata (IDS) y Apache:**
 ![Política Suricata + Apache](blueteam-suricata-apache-policy.png)
 
-**Dashboard de logs en Kibana — eventos ingeridos desde las fuentes:**
-![Kibana logs](blueteam-kibana-logs.png)
-
 **Exploración de eventos en Kibana Discover — búsqueda y filtrado de la telemetría:**
 ![Kibana Discover](blueteam-kibana-discover.png)
 
