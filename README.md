@@ -20,6 +20,8 @@ La red se divide en tres zonas con distinto nivel de confianza:
 - **DMZ** — *zona desmilitarizada*: un segmento aislado donde se colocan **honeypots** (señuelos deliberadamente vulnerables —Cowrie SSH + rdpy RDP— para atraer y estudiar a los atacantes) sin arriesgar la red interna
 - **DMZ2** — servicios expuestos (Apache) bajo inspección de **Suricata**, un **IDS** (*Intrusion Detection System*: vigila el tráfico y alerta ante patrones de ataque)
 
+> 📄 **[Ver informe completo de la práctica (PDF)](Practica_Final_BlueTeam_Juan_Malbran.pdf)** — el despliegue paso a paso con capturas: pfSense, segmentación, honeypots, Fleet y el análisis de logs en Kibana.
+
 ---
 
 ## Por qué esta arquitectura — la Pirámide del Dolor
